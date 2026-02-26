@@ -8,12 +8,12 @@
 
 ```bash
 # Démarrer un serveur HTTP local
-python3 -m http.server 8000
+python3 -m http.server 3010
 # ou
 npx http-server
 
 # Ouvrir dans le navigateur
-open http://localhost:8000
+open http://localhost:3010
 ```
 
 ### 2. Utiliser le CLI
