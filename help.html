@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaVisu4D Scenario Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .card-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        .tools-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+
+        .tools-section h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .tool-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .tool-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            transition: background 0.3s;
+        }
+
+        .tool-item:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .tool-item code {
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 50px;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid white;
+        }
+
+        footer a:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ NaVisu4D</h1>
+            <p class="subtitle">Scenario Editor & Parser Tools</p>
+        </header>
+
+        <div class="cards">
+            <a href="navisu4d-editor.html" class="card">
+                <div class="card-icon">✏️</div>
+                <div class="card-title">Monaco Editor</div>
+                <div class="card-description">
+                    Éditeur syntaxique complet avec coloration, autocomplétion et validation en temps réel.
+                </div>
+                <span class="card-badge">Recommandé</span>
+            </a>
+
+            <div class="card" onclick="alert('Ouvrez la console et utilisez le CLI : node cli.js parse fichier.txt')">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">CLI Tools</div>
+                <div class="card-description">
+                    Outils en ligne de commande pour parser, valider et exporter vos scénarios.
+                </div>
+                <span class="card-badge">Terminal</span>
+            </div>
+
+            <a href="./grammaire/" class="card">
+                <div class="card-icon">📝</div>
+                <div class="card-title">Grammar Files</div>
+                <div class="card-description">
+                    Grammaire ANTLR4, parser et fichiers de configuration pour développeurs.
+                </div>
+                <span class="card-badge">Développeurs</span>
+            </a>
+        </div>
+
+        <div class="tools-section">
+            <h2>🛠️ Outils CLI disponibles</h2>
+            <div class="tool-list">
+                <div class="tool-item">
+                    <strong>Parse</strong><br>
+                    <code>node cli.js parse fichier.txt</code>
+                </div>
+                <div class="tool-item">
+                    <strong>Validate</strong><br>
+                    <code>node cli.js validate fichier.txt</code>
+                </div>
+                <div class="tool-item">
+                    <strong>Export JSON</strong><br>
+                    <code>node cli.js export fichier.txt</code>
+                </div>
+                <div class="tool-item">
+                    <strong>AST structuré</strong><br>
+                    <code>node cli.js structured fichier.txt</code>
+                </div>
+                <div class="tool-item">
+                    <strong>Statistiques</strong><br>
+                    <code>node cli.js info fichier.txt</code>
+                </div>
+                <div class="tool-item">
+                    <strong>Diagnostic</strong><br>
+                    <code>node diagnostic.js fichier.txt</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="tools-section">
+            <h2>📦 Architecture</h2>
+            <div style="color: white; line-height: 1.8;">
+                <pre style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; overflow-x: auto;">
+navisu4d-project/
+├── index.html                      ← Vous êtes ici
+├── navisu4d-editor.html            ← Éditeur Monaco
+├── navisu4d-monaco-config.js       ← Configuration langage
+└── grammaire/
+    ├── NaVisu4DCommands.g4         ← Grammaire source
+    ├── command-actions.js          ← Actions de parsing
+    ├── parser.js                   ← API de haut niveau
+    ├── parser-bundle.js            ← Bundle pour navigateur
+    ├── build-parser-bundle.js      ← Script de build
+    ├── cli.js                      ← Outils en ligne de commande
+    ├── diagnostic.js               ← Diagnostic de problèmes
+    ├── dispatcher.js               ← Dispatch vers backend
+    ├── exemple_scenario.txt        ← Exemple complet
+    └── tests.js                    ← Tests unitaires
+                </pre>
+            </div>
+        </div>
+
+        <div class="tools-section">
+            <h2>🚀 Quick Start</h2>
+            <div style="color: white; line-height: 2;">
+                <p><strong>1. Modifier la grammaire :</strong></p>
+                <p style="margin-left: 20px;">Éditez <code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">grammaire/NaVisu4DCommands.g4</code></p>
+                
+                <p style="margin-top: 15px;"><strong>2. Régénérer le parser :</strong></p>
+                <p style="margin-left: 20px;"><code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">cd grammaire && java -jar antlr4.jar -Dlanguage=JavaScript -visitor NaVisu4DCommands.g4</code></p>
+                
+                <p style="margin-top: 15px;"><strong>3. Créer le bundle :</strong></p>
+                <p style="margin-left: 20px;"><code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">node build-parser-bundle.js</code></p>
+                
+                <p style="margin-top: 15px;"><strong>4. Tester :</strong></p>
+                <p style="margin-left: 20px;"><code style="background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;">node cli.js parse exemple_scenario.txt</code></p>
+            </div>
+        </div>
+
+        <footer>
+            <p>
+                NaVisu4D Parser v1.0 · 
+                <a href="https://navisu4d.org" target="_blank">navisu4d.org</a> · 
+                <a href="./grammaire/MAINTENANCE-GUIDE.md" target="_blank">Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Animation au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

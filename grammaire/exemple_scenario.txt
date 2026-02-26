@@ -1,0 +1,61 @@
+#comment,"Introduction à la navigation maritime en Bretagne"
+#bbox,48.0,-5.0,49,2.0
+#move,flyTo,camera,-4.46,48.5,50000,0,-45,0
+
+#comment,"Question 1 : Quelles sont les profondeurs dans cette zone ?"
+#comment,"Nous allons afficher la carte vectorielle des profondeurs (depare)."
+#chart,vector,depare
+
+#comment,"Observons maintenant les isobathes plus en détail."
+#move,flyTo,camera,-4.56073,48.60283,5000,180,-45,0
+
+#comment,"Question 2 : Où se trouvent les bouées de signalisation ?"
+#comment,"Affichons le balisage vectoriel pour identifier les zones de navigation."
+#chart,vector,buoyage
+
+#comment,"Zoomons sur une zone avec beaucoup de balisage."
+#move,flyTo,camera,-4.56073,48.60283,250.0,180,-29.0,0.0
+
+#comment,"Question 3 : Quelle est la carte officielle de cette zone ?"
+#comment,"Affichons la carte raster du SHOM numéro 7311 (La Manche)."
+#chart,raster,7311
+
+#comment,"Ajoutons maintenant les zones restreintes à la navigation."
+#chart,vector,resare
+
+#comment,"Question 4 : Comment se comportent les courants dans cette zone ?"
+#comment,"Affichons les courants de marée en 2D avec les maxima."
+#oceanography,currents,tidalAtlas,2D,Max
+
+#comment,"Passons maintenant à une vue 3D des courants en mer d'Iroise."
+#oceanography,currents,tidalAtlas,3D,iroise,surface
+#move,flyTo,camera,-4.8485,48.3767,42801,0,-45,0
+
+#comment,"Question 5 : Quelle est la bathymétrie de la zone ?"
+#comment,"Affichons le modèle bathymétrique EMODNET."
+#bathymetry,emodnet
+
+#comment,"Comparons avec le modèle GEBCO."
+#clear,emodnet
+#bathymetry,gebco
+
+#comment,"Question 6 : Visualisons un drone en vol"
+#comment,"Simulons le vol d'un drone au-dessus de Brest."
+#simulation,json,droneBrest_height.json,drone.glb,false,silent,false,120,false,false,600,0,255,0,255,true,false,false
+
+#comment,"Question 7 : Observons la navigation d'un voilier"
+#comment,"Chargeons une trace GPX de navigation à la voile."
+#navigation,gpx,route_bretagne.gpx
+
+#comment,"Question 8 : Ajoutons du contexte multimédia"
+#comment,"Voici une image du port de Brest."
+#image,port_brest.jpg,"Port de Brest",800,600
+
+#comment,"Écoutons le son des vagues."
+#audio,waves.wav
+
+#comment,"Et pour finir, un message vocal de conclusion."
+#speech,"Merci d'avoir suivi cette démonstration de navigation maritime en Bretagne !"
+
+#comment,"Nettoyons l'affichage pour conclure."
+#clearAll
