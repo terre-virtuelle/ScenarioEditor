@@ -228,7 +228,7 @@ export function registerNaVisu4DLanguage(monaco) {
             'editor.foreground': '#D4D4D4',
             'editorLineNumber.foreground': '#858585',
             'editor.selectionBackground': '#264F78',
-            'editor.inactiveSelectionBackground': '#3A3D41'
+            'editor.inactiveSelectionBackground': '#3A3D41',
         }
     });
 
