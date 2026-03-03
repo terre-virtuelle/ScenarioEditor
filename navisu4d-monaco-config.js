@@ -117,53 +117,208 @@ export function registerNaVisu4DLanguage(monaco) {
 
     monaco.languages.registerCompletionItemProvider('navisu4d', {
         provideCompletionItems: (model, position) => {
-            const word = model.getWordUntilPosition(position);
+            const lineContent = model.getLineContent(position.lineNumber);
+            const textUntilPosition = lineContent.substring(0, position.column - 1);
+            const textAfterPosition = lineContent.substring(position.column - 1);
+            
+            // Debug
+            console.log('[Autocomplete] Full line:', lineContent);
+            console.log('[Autocomplete] Before cursor:', textUntilPosition);
+            
+            // Analyser la structure : trouver où on est dans la commande
+            const lastHashIndex = textUntilPosition.lastIndexOf('#');
+            
+            if (lastHashIndex === -1) {
+                console.log('[Autocomplete] No # found');
+                return { suggestions: [] };
+            }
+            
+            // Extraire tout depuis le dernier #
+            const afterHash = textUntilPosition.substring(lastHashIndex + 1);
+            const parts = afterHash.split(',');
+            
+            console.log('[Autocomplete] After #:', afterHash);
+            console.log('[Autocomplete] Parts:', parts);
+            
+            // Calculer le range intelligent
+            // Trouver le début du segment actuel (après la dernière virgule ou après #)
+            let segmentStart = lastHashIndex + 1; // Juste après #
+            for (let i = 0; i < parts.length - 1; i++) {
+                segmentStart += parts[i].length + 1; // +1 pour la virgule
+            }
+            segmentStart += 1; // Conversion base 0 -> base 1
+            
+            // Trouver la fin du segment (jusqu'à la prochaine virgule, # ou fin)
+            const restOfLine = lineContent.substring(position.column - 1);
+            let segmentEnd = position.column;
+            const nextDelimiter = restOfLine.search(/[,#\s]/);
+            if (nextDelimiter !== -1) {
+                segmentEnd = position.column + nextDelimiter;
+            } else {
+                segmentEnd = lineContent.length + 1;
+            }
+            
             const range = {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn
+                startColumn: segmentStart,
+                endColumn: segmentEnd
             };
-
-            const line = model.getLineContent(position.lineNumber);
-            const beforeCursor = line.substring(0, position.column - 1);
-
-            // Si on est après un #, proposer les commandes
-            if (beforeCursor.trimEnd().endsWith('#')) {
-                return {
-                    suggestions: getCommandSuggestions(monaco, range)
-                };
+            
+            console.log('[Autocomplete] Range:', segmentStart, '->', segmentEnd);
+            
+            // Déterminer le contexte selon le nombre de virgules
+            const numCommas = parts.length - 1;
+            const currentSegment = parts[parts.length - 1].trim();
+            const previousSegment = parts.length > 1 ? parts[parts.length - 2].trim() : '';
+            
+            console.log('[Autocomplete] Num commas:', numCommas);
+            console.log('[Autocomplete] Current segment:', currentSegment);
+            console.log('[Autocomplete] Previous segment:', previousSegment);
+            
+            // RÈGLE IMPORTANTE : Ne suggérer les paramètres QUE si le segment actuel est vide
+            // ou si on vient juste de taper une virgule
+            const justTypedComma = textUntilPosition.endsWith(',');
+            const segmentIsEmpty = currentSegment === '';
+            
+            console.log('[Autocomplete] Just typed comma:', justTypedComma);
+            console.log('[Autocomplete] Segment is empty:', segmentIsEmpty);
+            
+            // Contexte 0 : Nom de la commande (pas de virgule encore)
+            if (numCommas === 0) {
+                console.log('[Autocomplete] Context: command name');
+                const prefix = currentSegment.toLowerCase();
+                const allCommands = getCommandSuggestions(monaco, range);
+                
+                if (prefix) {
+                    const filtered = allCommands.filter(cmd => 
+                        cmd.label.toLowerCase().startsWith(prefix)
+                    );
+                    console.log('[Autocomplete] Filtered to', filtered.length, 'commands');
+                    return { suggestions: filtered };
+                }
+                
+                console.log('[Autocomplete] Showing all', allCommands.length, 'commands');
+                return { suggestions: allCommands };
             }
-
-            // Si on est après "chart,", proposer les types
-            if (/chart,\s*$/i.test(beforeCursor)) {
+            
+            // Pour les paramètres : SEULEMENT si segment vide ou juste après virgule
+            if (!segmentIsEmpty && !justTypedComma) {
+                console.log('[Autocomplete] Not at comma boundary, no suggestions');
+                return { suggestions: [] };
+            }
+            
+            // Extraire le nom de la commande
+            const commandName = parts[0].trim().toLowerCase();
+            console.log('[Autocomplete] Command name:', commandName);
+            
+            // Contexte selon la commande
+            if (commandName === 'chart') {
+                if (numCommas === 1) {
+                    // Premier paramètre : type de carte
+                    console.log('[Autocomplete] Context: chart type');
+                    return {
+                        suggestions: [
+                            createCompletion(monaco, 'vector', 'Keyword', 'vector', range),
+                            createCompletion(monaco, 'raster', 'Keyword', 'raster', range),
+                            createCompletion(monaco, 'mbtiles', 'Keyword', 'mbtiles', range)
+                        ]
+                    };
+                } else if (numCommas === 2) {
+                    // Deuxième paramètre : dépend du premier
+                    const chartType = parts[1].trim().toLowerCase();
+                    console.log('[Autocomplete] Chart type was:', chartType);
+                    
+                    if (chartType === 'vector') {
+                        console.log('[Autocomplete] Context: vector layers');
+                        return {
+                            suggestions: [
+                                createCompletion(monaco, 'depare', 'Keyword', 'depare', range),
+                                createCompletion(monaco, 'buoyage', 'Keyword', 'buoyage', range),
+                                createCompletion(monaco, 'hrbare', 'Keyword', 'hrbare', range),
+                                createCompletion(monaco, 'resare', 'Keyword', 'resare', range),
+                                createCompletion(monaco, 'landmark', 'Keyword', 'landmark', range),
+                                createCompletion(monaco, 'staticLight', 'Keyword', 'staticLight', range),
+                                createCompletion(monaco, 'wrecks', 'Keyword', 'wrecks', range)
+                            ]
+                        };
+                    } else if (chartType === 'raster') {
+                        console.log('[Autocomplete] Context: raster chart numbers');
+                        // Pour raster, suggérer des numéros de cartes SHOM courants
+                        return {
+                            suggestions: [
+                                createCompletion(monaco, '7311', 'Keyword', '7311  // La Manche', range),
+                                createCompletion(monaco, '7400', 'Keyword', '7400  // Atlantique', range),
+                                createCompletion(monaco, '6822', 'Keyword', '6822  // Méditerranée', range)
+                            ]
+                        };
+                    }
+                }
+            }
+            
+            if (commandName === 'layer' && numCommas === 1) {
+                // Premier paramètre : type de couche
+                console.log('[Autocomplete] Context: layer type');
                 return {
                     suggestions: [
-                        createCompletion(monaco, 'vector', 'Chart type', 'vector', range),
-                        createCompletion(monaco, 'raster', 'Chart type', 'raster', range),
-                        createCompletion(monaco, 'mbtiles', 'Chart type', 'mbtiles', range)
+                        createCompletion(monaco, 'bathymetry', 'Keyword', 'bathymetry', range),
+                        createCompletion(monaco, 'altimetry', 'Keyword', 'altimetry', range),
+                        createCompletion(monaco, 'oceanography', 'Keyword', 'oceanography', range)
                     ]
                 };
             }
-
-            // Si on est après "chart,vector,", proposer les couches vectorielles
-            if (/chart,\s*vector,\s*$/i.test(beforeCursor)) {
+            
+            if (commandName === 'layer' && numCommas === 2) {
+                const layerType = parts[1].trim().toLowerCase();
+                
+                if (layerType === 'bathymetry') {
+                    console.log('[Autocomplete] Context: bathymetry sources');
+                    return {
+                        suggestions: [
+                            createCompletion(monaco, 'emodnet', 'Keyword', 'emodnet', range),
+                            createCompletion(monaco, 'gebco', 'Keyword', 'gebco', range),
+                            createCompletion(monaco, 'homonim', 'Keyword', 'homonim', range)
+                        ]
+                    };
+                } else if (layerType === 'altimetry') {
+                    console.log('[Autocomplete] Context: altimetry sources');
+                    return {
+                        suggestions: [
+                            createCompletion(monaco, 'litto3d', 'Keyword', 'litto3d', range)
+                        ]
+                    };
+                } else if (layerType === 'oceanography') {
+                    console.log('[Autocomplete] Context: oceanography types');
+                    return {
+                        suggestions: [
+                            createCompletion(monaco, 'tides', 'Keyword', 'tides', range),
+                            createCompletion(monaco, 'currents', 'Keyword', 'currents', range)
+                        ]
+                    };
+                }
+            }
+            
+            if (commandName === 'clear' && numCommas === 1) {
+                // Suggérer les noms de couches communes
+                console.log('[Autocomplete] Context: clear layer name');
                 return {
                     suggestions: [
-                        createCompletion(monaco, 'depare', 'Vector layer', 'depare  // Profondeurs', range),
-                        createCompletion(monaco, 'buoyage', 'Vector layer', 'buoyage  // Balisage', range),
-                        createCompletion(monaco, 'hrbare', 'Vector layer', 'hrbare  // Ports', range),
-                        createCompletion(monaco, 'resare', 'Vector layer', 'resare  // Zones restreintes', range),
-                        createCompletion(monaco, 'landmark', 'Vector layer', 'landmark  // Amers', range),
-                        createCompletion(monaco, 'staticLight', 'Vector layer', 'staticLight  // Phares', range),
-                        createCompletion(monaco, 'wrecks', 'Vector layer', 'wrecks  // Épaves', range)
+                        createCompletion(monaco, 'depare', 'Keyword', 'depare', range),
+                        createCompletion(monaco, 'buoyage', 'Keyword', 'buoyage', range),
+                        createCompletion(monaco, 'hrbare', 'Keyword', 'hrbare', range),
+                        createCompletion(monaco, 'emodnet', 'Keyword', 'emodnet', range),
+                        createCompletion(monaco, 'gebco', 'Keyword', 'gebco', range),
+                        createCompletion(monaco, 'litto3d', 'Keyword', 'litto3d', range)
                     ]
                 };
             }
-
-            // Suggestions par défaut
+            
+            console.log('[Autocomplete] No specific context');
             return { suggestions: [] };
-        }
+        },
+        
+        // Déclencher automatiquement seulement sur # et ,
+        triggerCharacters: ['#', ',']
     });
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -228,7 +383,7 @@ export function registerNaVisu4DLanguage(monaco) {
             'editor.foreground': '#D4D4D4',
             'editorLineNumber.foreground': '#858585',
             'editor.selectionBackground': '#264F78',
-            'editor.inactiveSelectionBackground': '#3A3D41',
+            'editor.inactiveSelectionBackground': '#3A3D41'
         }
     });
 
@@ -269,20 +424,38 @@ function createCompletion(monaco, label, kind, insertText, range) {
 
 function getCommandSuggestions(monaco, range) {
     const commands = [
+        // Commandes principales
         { label: 'comment', doc: 'Commentaire / texte libre', snippet: 'comment,"${1:Texte}"' },
         { label: 'bbox', doc: 'Zone d\'affichage', snippet: 'bbox,${1:48.0},${2:-5.0},${3:49.0},${4:2.0}' },
         { label: 'move', doc: 'Position de la caméra', snippet: 'move,flyTo,camera,${1:-4.46},${2:48.5},${3:5000},${4:0},${5:-45},${6:0}' },
         { label: 'daynight', doc: 'Cycle jour/nuit', snippet: 'daynight,${1|true,false|}' },
-        { label: 'chart', doc: 'Couche cartographique', snippet: 'chart,${1|vector,raster,mbtiles|},${2:depare}' },
+        
+        // Cartographie - SNIPPETS SIMPLIFIÉS
+        { label: 'chart', doc: 'Couche cartographique', snippet: 'chart,' },
         { label: 'terrain', doc: 'Terrain 3D', snippet: 'terrain,google3d' },
-        { label: 'layer', doc: 'Couche de données', snippet: 'layer,${1|bathymetry,altimetry,oceanography|},${2:emodnet}' },
+        { label: 'layer', doc: 'Couche de données', snippet: 'layer,' },
+        
+        // Multimédia
         { label: 'image', doc: 'Image 2D', snippet: 'image,${1:filename.jpg},"${2:Titre}",${3:800},${4:600}' },
+        { label: 'image3d', doc: 'Image 3D', snippet: 'image3d,${1:filename.jpg}' },
         { label: 'video', doc: 'Vidéo', snippet: 'video,${1:https://...},"${2:Titre}",${3:800},${4:600}' },
+        { label: 'video3d', doc: 'Vidéo 3D', snippet: 'video3d,${1:https://...},${2|true,false|}' },
+        { label: 'billboard', doc: 'Billboard 3D', snippet: 'billboard,${1:image.jpg},"${2:Titre}",${3:-4.5},${4:48.5}' },
+        { label: 'billboardcb', doc: 'Billboard CB', snippet: 'billboardcb,${1:image.jpg}' },
+        { label: 'text', doc: 'Texte à l\'écran', snippet: 'text,"${1:Contenu}","${2:Titre}"' },
         { label: 'audio', doc: 'Audio', snippet: 'audio,${1:sound.wav}' },
         { label: 'speech', doc: 'Synthèse vocale', snippet: 'speech,"${1:Texte à prononcer}"' },
+        { label: 'webcam', doc: 'Activer webcam', snippet: 'webcam' },
+        { label: 'fireworks', doc: 'Feux d\'artifice', snippet: 'fireworks,${1:-4.5},${2:48.5},${3:100}' },
+        
+        // Simulation
         { label: 'simulation', doc: 'Simulation', snippet: 'simulation,${1|json,nmea|},${2:data.json}' },
-        { label: 'navigation', doc: 'Navigation', snippet: 'navigation,${1|pilotchart,avurnav,gpx|},${2:param}' },
-        { label: 'clear', doc: 'Supprimer une couche', snippet: 'clear,${1:depare}' },
+        { label: 'navigation', doc: 'Navigation', snippet: 'navigation,${1|pilotchart,avurnav,gpx|},' },
+        
+        // Autres
+        { label: 'seabed', doc: 'Fond marin', snippet: 'seabed' },
+        { label: 'quiz', doc: 'Quiz', snippet: 'quiz,${1:questions.json}' },
+        { label: 'clear', doc: 'Supprimer une couche', snippet: 'clear,' },
         { label: 'clearAll', doc: 'Tout supprimer', snippet: 'clearAll' }
     ];
 
