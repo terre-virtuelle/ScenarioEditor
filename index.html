@@ -1,255 +1,283 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NaVisu4D Scenario Editor</title>
-    <link href="css/mainStyle.css" rel="stylesheet">
-</head>
-<body>
-    <header>
-    <img class="fit-picture" src="css/img/logo-navisu.png" alt="NaVisu4D" />
-        <h1> NaVisu4D Scenario Editor</h1>
-        <div class="header-actions">
-            <button id="btn-parse">Parse</button>
-            <button id="btn-validate">Validate</button>
-            <button id="btn-download" class="secondary">Download</button>
-            <button id="btn-theme" class="secondary">🌓 Theme</button>
-        </div>
-    </header>
-
-    <main>
-        <div id="editor-container"></div>
-        
-        <aside id="sidebar">
-            <div class="sidebar-section stats">
-                <div class="stat-item">
-                    <div class="stat-label">Commands</div>
-                    <div class="stat-value" id="stat-commands">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Lines</div>
-                    <div class="stat-value" id="stat-lines">0</div>
-                </div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NaVisu4D Scenario Editor</title>
+        <link href="css/mainStyle.css" rel="stylesheet">
+    </head>
+    <body>
+        <header>
+            <img class="fit-picture" src="css/img/logo-navisu.png" alt="NaVisu4D" />
+            <h1> NaVisu4D Scenario Editor</h1>
+            <div class="header-actions">
+                <button id="btn-parse">Parse</button>
+                <button id="btn-validate">Validate</button>
+                <button id="btn-download" class="secondary">Download</button>
+                <button id="openButton">Open</button>
+                <input type="file" id="fileInput" style="display: none;" accept=".txt">
+                <div id="fileContent"></div>
+                <button id="btn-theme" class="secondary">🌓 Theme</button>
             </div>
+        </header>
 
-            <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column;">
-                <h2>Console</h2>
-                <div id="output"></div>
+        <main>
+            <div id="editor-container"></div>
+
+            <aside id="sidebar">
+                <div class="sidebar-section stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Commands</div>
+                        <div class="stat-value" id="stat-commands">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Lines</div>
+                        <div class="stat-value" id="stat-lines">0</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column;">
+                    <h2>Console</h2>
+                    <div id="output"></div>
+                </div>
+            </aside>
+        </main>
+
+        <footer>
+            <div>
+                <span class="status-indicator ready" id="status-indicator"></span>
+                <span id="status-text">Ready</span>
             </div>
-        </aside>
-    </main>
+            <div>
+                NaVisu4D v1.0 · <a href="https://navisu4d.org" style="color: #3794ff; text-decoration: none;">navisu4d.org</a>
+            </div>
+        </footer>
 
-    <footer>
-        <div>
-            <span class="status-indicator ready" id="status-indicator"></span>
-            <span id="status-text">Ready</span>
-        </div>
-        <div>
-            NaVisu4D v1.0 · <a href="https://navisu4d.org" style="color: #3794ff; text-decoration: none;">navisu4d.org</a>
-        </div>
-    </footer>
+        <!-- Monaco Editor -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
 
-    <!-- Monaco Editor -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-    
-    <script type="module">
-        import { registerNaVisu4DLanguage, defaultScenario } from './navisu4d-monaco-config.js';
+        <script type="module">
+            import { registerNaVisu4DLanguage, defaultScenario } from './navisu4d-monaco-config.js';
 
-        let editor;
-        let currentTheme = 'navisu4d-dark';
+            let editor;
+            let currentTheme = 'navisu4d-dark';
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  Initialisation Monaco
-        // ═══════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════════
+            //  Initialisation Monaco
+            // ═══════════════════════════════════════════════════════════════════
 
-        require.config({ 
-            paths: { 
-                vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' 
-            } 
-        });
-
-        require(['vs/editor/editor.main'], function() {
-            // Enregistrer le langage NaVisu4D
-            registerNaVisu4DLanguage(monaco);
-
-            // Créer l'éditeur
-            editor = monaco.editor.create(document.getElementById('editor-container'), {
-                value: defaultScenario,
-                language: 'navisu4d',
-                theme: currentTheme,
-                fontSize: 16,
-                lineNumbers: 'on',
-                roundedSelection: false,
-                scrollBeyondLastLine: false,
-                readOnly: false,
-                minimap: { enabled: true },
-                automaticLayout: true,
-                suggestOnTriggerCharacters: true,
-                quickSuggestions: true,
-                wordBasedSuggestions: false,
-                padding: { top: 30 } // Ajoute un padding en haut de l'éditeur
+            require.config({
+                paths: {
+                    vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs'
+                }
             });
 
-            // Mise à jour des stats en temps réel
-            editor.onDidChangeModelContent(() => {
+            require(['vs/editor/editor.main'], function () {
+                // Enregistrer le langage NaVisu4D
+                registerNaVisu4DLanguage(monaco);
+
+                // Créer l'éditeur
+                editor = monaco.editor.create(document.getElementById('editor-container'), {
+                    value: defaultScenario,
+                    language: 'navisu4d',
+                    theme: currentTheme,
+                    fontSize: 16,
+                    lineNumbers: 'on',
+                    roundedSelection: false,
+                    scrollBeyondLastLine: false,
+                    readOnly: false,
+                    minimap: {enabled: true},
+                    automaticLayout: true,
+                    suggestOnTriggerCharacters: true,
+                    quickSuggestions: true,
+                    wordBasedSuggestions: false,
+                    padding: {top: 30} // Ajoute un padding en haut de l'éditeur
+                });
+
+                // Mise à jour des stats en temps réel
+                editor.onDidChangeModelContent(() => {
+                    updateStats();
+                });
+
                 updateStats();
-            });
+                log('✓ Editor initialized', 'success');
 
-            updateStats();
-            log('✓ Editor initialized', 'success');
-        });
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  Actions
-        // ═══════════════════════════════════════════════════════════════════
 
-        document.getElementById('btn-parse').addEventListener('click', async () => {
-            setStatus('parsing', 'Parsing...');
-            const code = editor.getValue();
-            
-            try {
-                // Simuler un appel au parser (remplacer par vraie intégration)
-                const result = await parseScenario(code);
-                
-                if (result.success) {
-                    log(`✓ Parsed successfully: ${result.commands.length} command(s)`, 'success');
-                    setStatus('ready', 'Ready');
-                } else {
-                    log(`✗ Parse error: ${result.error}`, 'error');
-                    setStatus('error', 'Parse error');
-                }
-            } catch (err) {
-                log(`✗ Error: ${err.message}`, 'error');
-                setStatus('error', 'Error');
-            }
-        });
+                //  const fs = require('node:fs');
 
-        document.getElementById('btn-validate').addEventListener('click', async () => {
-            setStatus('parsing', 'Validating...');
-            const code = editor.getValue();
-            
-            try {
-                const result = await validateScenario(code);
-                
-                if (result.valid) {
-                    log('✓ Scenario is valid', 'success');
-                    setStatus('ready', 'Ready');
-                } else {
-                    log(`✗ Validation failed:\n${result.errors.join('\n')}`, 'error');
-                    if (result.warnings.length) {
-                        log(`⚠ Warnings:\n${result.warnings.join('\n')}`, 'info');
+                // ═══════════════════════════════════════════════════════════════════
+                //  Actions
+                // ═══════════════════════════════════════════════════════════════════
+
+                document.getElementById('btn-parse').addEventListener('click', async () => {
+                    setStatus('parsing', 'Parsing...');
+                    const code = editor.getValue();
+
+                    try {
+                        // Simuler un appel au parser (remplacer par vraie intégration)
+                        const result = await parseScenario(code);
+
+                        if (result.success) {
+                            log(`✓ Parsed successfully: ${result.commands.length} command(s)`, 'success');
+                            setStatus('ready', 'Ready');
+                        } else {
+                            log(`✗ Parse error: ${result.error}`, 'error');
+                            setStatus('error', 'Parse error');
+                        }
+                    } catch (err) {
+                        log(`✗ Error: ${err.message}`, 'error');
+                        setStatus('error', 'Error');
                     }
-                    setStatus('error', 'Invalid');
+                });
+
+                document.getElementById('btn-validate').addEventListener('click', async () => {
+                    setStatus('parsing', 'Validating...');
+                    const code = editor.getValue();
+
+                    try {
+                        const result = await validateScenario(code);
+
+                        if (result.valid) {
+                            log('✓ Scenario is valid', 'success');
+                            setStatus('ready', 'Ready');
+                        } else {
+                            log(`✗ Validation failed:\n${result.errors.join('\n')}`, 'error');
+                            if (result.warnings.length) {
+                                log(`⚠ Warnings:\n${result.warnings.join('\n')}`, 'info');
+                            }
+                            setStatus('error', 'Invalid');
+                        }
+                    } catch (err) {
+                        log(`✗ Error: ${err.message}`, 'error');
+                        setStatus('error', 'Error');
+                    }
+                });
+
+                document.getElementById('btn-download').addEventListener('click', () => {
+                    const code = editor.getValue();
+                    const blob = new Blob([code], {type: 'text/plain'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'scenario_navisu4d.txt';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    log('✓ Scenario downloaded', 'success');
+                });
+
+                document.getElementById('openButton').addEventListener('click', function () {
+                    document.getElementById('fileInput').click();
+                });
+
+                document.getElementById('fileInput').addEventListener('change', function (e) {
+                    const file = e.target.files[0];
+                    if (!file) {
+                        return;
+                    }
+
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        const content = e.target.result;
+
+                        editor.setValue(content);
+                    };
+
+                    reader.readAsText(file);
+                });
+
+                document.getElementById('btn-theme').addEventListener('click', () => {
+                    currentTheme = currentTheme === 'navisu4d-dark' ? 'navisu4d-light' : 'navisu4d-dark';
+                    monaco.editor.setTheme(currentTheme);
+                    document.body.style.background = currentTheme === 'navisu4d-dark' ? '#1e1e1e' : '#ffffff';
+                    document.body.style.color = currentTheme === 'navisu4d-dark' ? '#d4d4d4' : '#000000';
+                    log(`Theme changed to ${currentTheme}`, 'info');
+                });
+
+                // ═══════════════════════════════════════════════════════════════════
+                //  Helpers
+                // ═══════════════════════════════════════════════════════════════════
+
+                function updateStats() {
+                    const code = editor.getValue();
+                    const lines = code.split('\n').length;
+                    const commands = (code.match(/#\w+/g) || []).length;
+
+                    document.getElementById('stat-lines').textContent = lines;
+                    document.getElementById('stat-commands').textContent = commands;
                 }
-            } catch (err) {
-                log(`✗ Error: ${err.message}`, 'error');
-                setStatus('error', 'Error');
-            }
-        });
 
-        document.getElementById('btn-download').addEventListener('click', () => {
-            const code = editor.getValue();
-            const blob = new Blob([code], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'scenario_navisu4d.txt';
-            a.click();
-            URL.revokeObjectURL(url);
-            log('✓ Scenario downloaded', 'success');
-        });
+                function log(message, type = 'info') {
+                    const output = document.getElementById('output');
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry ${type}`;
 
-        document.getElementById('btn-theme').addEventListener('click', () => {
-            currentTheme = currentTheme === 'navisu4d-dark' ? 'navisu4d-light' : 'navisu4d-dark';
-            monaco.editor.setTheme(currentTheme);
-            document.body.style.background = currentTheme === 'navisu4d-dark' ? '#1e1e1e' : '#ffffff';
-            document.body.style.color = currentTheme === 'navisu4d-dark' ? '#d4d4d4' : '#000000';
-            log(`Theme changed to ${currentTheme}`, 'info');
-        });
+                    const timestamp = new Date().toLocaleTimeString('fr-FR');
+                    entry.innerHTML = `
+                    <div class="timestamp">${timestamp}</div>
+                    <div class="message">${escapeHtml(message)}</div>
+                `;
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  Helpers
-        // ═══════════════════════════════════════════════════════════════════
+                    output.appendChild(entry);
+                    output.scrollTop = output.scrollHeight;
+                }
 
-        function updateStats() {
-            const code = editor.getValue();
-            const lines = code.split('\n').length;
-            const commands = (code.match(/#\w+/g) || []).length;
-            
-            document.getElementById('stat-lines').textContent = lines;
-            document.getElementById('stat-commands').textContent = commands;
-        }
+                function setStatus(state, text) {
+                    const indicator = document.getElementById('status-indicator');
+                    const statusText = document.getElementById('status-text');
 
-        function log(message, type = 'info') {
-            const output = document.getElementById('output');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            
-            const timestamp = new Date().toLocaleTimeString('fr-FR');
-            entry.innerHTML = `
-                <div class="timestamp">${timestamp}</div>
-                <div class="message">${escapeHtml(message)}</div>
-            `;
-            
-            output.appendChild(entry);
-            output.scrollTop = output.scrollHeight;
-        }
+                    indicator.className = `status-indicator ${state}`;
+                    statusText.textContent = text;
+                }
 
-        function setStatus(state, text) {
-            const indicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-            
-            indicator.className = `status-indicator ${state}`;
-            statusText.textContent = text;
-        }
+                function escapeHtml(text) {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+                // ═══════════════════════════════════════════════════════════════════
+                //  Parser Integration (stub - à remplacer par vraie intégration)
+                // ═══════════════════════════════════════════════════════════════════
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  Parser Integration (stub - à remplacer par vraie intégration)
-        // ═══════════════════════════════════════════════════════════════════
+                async function parseScenario(code) {
+                    // TODO: Intégrer avec parser.js
+                    // Pour l'instant, simple validation
+                    const commands = code.match(/#\w+/g) || [];
 
-        async function parseScenario(code) {
-            // TODO: Intégrer avec parser.js
-            // Pour l'instant, simple validation
-            const commands = code.match(/#\w+/g) || [];
-            
-            // Simuler un délai
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            return {
-                success: true,
-                commands: commands.map((cmd, i) => ({ type: cmd.substring(1), index: i }))
-            };
-        }
+                    // Simuler un délai
+                    await new Promise(resolve => setTimeout(resolve, 300));
 
-        async function validateScenario(code) {
-            // TODO: Intégrer avec parser.js validateScenario()
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            const errors = [];
-            const warnings = [];
-            
-            // Vérification basique
-            if (!code.trim()) {
-                errors.push('Scenario is empty');
-            }
-            
-            if (code.includes('bbox') && !code.match(/#bbox,[-\d.]+,[-\d.]+,[-\d.]+,[-\d.]+/)) {
-                errors.push('Invalid bbox syntax');
-            }
-            
-            return {
-                valid: errors.length === 0,
-                errors,
-                warnings
-            };
-        }
-    </script>
-</body>
+                    return {
+                        success: true,
+                        commands: commands.map((cmd, i) => ({type: cmd.substring(1), index: i}))
+                    };
+                }
+
+                async function validateScenario(code) {
+                    // TODO: Intégrer avec parser.js validateScenario()
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    const errors = [];
+                    const warnings = [];
+
+                    // Vérification basique
+                    if (!code.trim()) {
+                        errors.push('Scenario is empty');
+                    }
+
+                    if (code.includes('bbox') && !code.match(/#bbox,[-\d.]+,[-\d.]+,[-\d.]+,[-\d.]+/)) {
+                        errors.push('Invalid bbox syntax');
+                    }
+
+                    return {
+                        valid: errors.length === 0,
+                        errors,
+                        warnings
+                    };
+                }
+            });
+        </script>
+    </body>
 </html>

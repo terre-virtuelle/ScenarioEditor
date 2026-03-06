@@ -9,15 +9,15 @@
  */
 
 export function registerNaVisu4DLanguage(monaco) {
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
     //  1. Enregistrement du langage
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
 
-    monaco.languages.register({ id: 'navisu4d' });
+    monaco.languages.register({id: 'navisu4d'});
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
     //  2. Tokenizer (coloration syntaxique)
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
 
     monaco.languages.setMonarchTokensProvider('navisu4d', {
         defaultToken: '',
@@ -61,17 +61,17 @@ export function registerNaVisu4DLanguage(monaco) {
             root: [
                 // Commande (commence par #)
                 [/#[a-zA-Z0-9]+/, {
-                    cases: {
-                        '@commands': 'keyword.command',
-                        '@default': 'invalid'
-                    }
-                }],
+                        cases: {
+                            '@commands': 'keyword.command',
+                            '@default': 'invalid'
+                        }
+                    }],
 
                 // Chaînes entre guillemets
                 [/"([^"\\]|\\.)*$/, 'string.invalid'],
-                [/"/, { token: 'string.quote', bracket: '@open', next: '@string_double' }],
+                [/"/, {token: 'string.quote', bracket: '@open', next: '@string_double'}],
                 [/'([^'\\]|\\.)*$/, 'string.invalid'],
-                [/'/, { token: 'string.quote', bracket: '@open', next: '@string_single' }],
+                [/'/, {token: 'string.quote', bracket: '@open', next: '@string_single'}],
 
                 // Nombres (entiers et flottants, y compris négatifs)
                 [/-?\d+\.\d+/, 'number.float'],
@@ -82,13 +82,13 @@ export function registerNaVisu4DLanguage(monaco) {
 
                 // Mots-clés spéciaux
                 [/\b[a-zA-Z0-9_-]+\b/, {
-                    cases: {
-                        '@commands': 'keyword',
-                        '@regions': 'variable.region',
-                        '@vectorLayers': 'variable.layer',
-                        '@default': 'identifier'
-                    }
-                }],
+                        cases: {
+                            '@commands': 'keyword',
+                            '@regions': 'variable.region',
+                            '@vectorLayers': 'variable.layer',
+                            '@default': 'identifier'
+                        }
+                    }],
 
                 // Virgules
                 [/,/, 'delimiter.comma'],
@@ -100,46 +100,46 @@ export function registerNaVisu4DLanguage(monaco) {
             string_double: [
                 [/[^\\"]+/, 'string'],
                 [/\\./, 'string.escape'],
-                [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+                [/"/, {token: 'string.quote', bracket: '@close', next: '@pop'}]
             ],
 
             string_single: [
                 [/[^\\']+/, 'string'],
                 [/\\./, 'string.escape'],
-                [/'/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+                [/'/, {token: 'string.quote', bracket: '@close', next: '@pop'}]
             ]
         }
     });
 
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
     //  3. Autocomplétion
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════════════
 
     monaco.languages.registerCompletionItemProvider('navisu4d', {
         provideCompletionItems: (model, position) => {
             const lineContent = model.getLineContent(position.lineNumber);
             const textUntilPosition = lineContent.substring(0, position.column - 1);
             const textAfterPosition = lineContent.substring(position.column - 1);
-            
+
             // Debug
             console.log('[Autocomplete] Full line:', lineContent);
             console.log('[Autocomplete] Before cursor:', textUntilPosition);
-            
+
             // Analyser la structure : trouver où on est dans la commande
             const lastHashIndex = textUntilPosition.lastIndexOf('#');
-            
+
             if (lastHashIndex === -1) {
                 console.log('[Autocomplete] No # found');
-                return { suggestions: [] };
+                return {suggestions: []};
             }
-            
+
             // Extraire tout depuis le dernier #
             const afterHash = textUntilPosition.substring(lastHashIndex + 1);
             const parts = afterHash.split(',');
-            
+
             console.log('[Autocomplete] After #:', afterHash);
             console.log('[Autocomplete] Parts:', parts);
-            
+
             // Calculer le range intelligent
             // Trouver le début du segment actuel (après la dernière virgule ou après #)
             let segmentStart = lastHashIndex + 1; // Juste après #
@@ -147,7 +147,7 @@ export function registerNaVisu4DLanguage(monaco) {
                 segmentStart += parts[i].length + 1; // +1 pour la virgule
             }
             segmentStart += 1; // Conversion base 0 -> base 1
-            
+
             // Trouver la fin du segment (jusqu'à la prochaine virgule, # ou fin)
             const restOfLine = lineContent.substring(position.column - 1);
             let segmentEnd = position.column;
@@ -157,61 +157,60 @@ export function registerNaVisu4DLanguage(monaco) {
             } else {
                 segmentEnd = lineContent.length + 1;
             }
-            
+
             const range = {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: segmentStart,
                 endColumn: segmentEnd
             };
-            
+
             console.log('[Autocomplete] Range:', segmentStart, '->', segmentEnd);
-            
+
             // Déterminer le contexte selon le nombre de virgules
             const numCommas = parts.length - 1;
             const currentSegment = parts[parts.length - 1].trim();
             const previousSegment = parts.length > 1 ? parts[parts.length - 2].trim() : '';
-            
+
             console.log('[Autocomplete] Num commas:', numCommas);
             console.log('[Autocomplete] Current segment:', currentSegment);
             console.log('[Autocomplete] Previous segment:', previousSegment);
-            
-            // RÈGLE IMPORTANTE : Ne suggérer les paramètres QUE si le segment actuel est vide
+            // RÈGLE Ne suggérer les paramètres QUE si le segment actuel est vide
             // ou si on vient juste de taper une virgule
             const justTypedComma = textUntilPosition.endsWith(',');
             const segmentIsEmpty = currentSegment === '';
-            
+
             console.log('[Autocomplete] Just typed comma:', justTypedComma);
             console.log('[Autocomplete] Segment is empty:', segmentIsEmpty);
-            
+
             // Contexte 0 : Nom de la commande (pas de virgule encore)
             if (numCommas === 0) {
                 console.log('[Autocomplete] Context: command name');
                 const prefix = currentSegment.toLowerCase();
                 const allCommands = getCommandSuggestions(monaco, range);
-                
+
                 if (prefix) {
-                    const filtered = allCommands.filter(cmd => 
+                    const filtered = allCommands.filter(cmd =>
                         cmd.label.toLowerCase().startsWith(prefix)
                     );
                     console.log('[Autocomplete] Filtered to', filtered.length, 'commands');
-                    return { suggestions: filtered };
+                    return {suggestions: filtered};
                 }
-                
+
                 console.log('[Autocomplete] Showing all', allCommands.length, 'commands');
-                return { suggestions: allCommands };
+                return {suggestions: allCommands};
             }
-            
+
             // Pour les paramètres : SEULEMENT si segment vide ou juste après virgule
             if (!segmentIsEmpty && !justTypedComma) {
                 console.log('[Autocomplete] Not at comma boundary, no suggestions');
-                return { suggestions: [] };
+                return {suggestions: []};
             }
-            
+
             // Extraire le nom de la commande
             const commandName = parts[0].trim().toLowerCase();
             console.log('[Autocomplete] Command name:', commandName);
-            
+
             // Contexte selon la commande
             if (commandName === 'chart') {
                 if (numCommas === 1) {
@@ -228,7 +227,7 @@ export function registerNaVisu4DLanguage(monaco) {
                     // Deuxième paramètre : dépend du premier
                     const chartType = parts[1].trim().toLowerCase();
                     console.log('[Autocomplete] Chart type was:', chartType);
-                    
+
                     if (chartType === 'vector') {
                         console.log('[Autocomplete] Context: vector layers');
                         return {
@@ -255,7 +254,7 @@ export function registerNaVisu4DLanguage(monaco) {
                     }
                 }
             }
-            
+
             if (commandName === 'layer' && numCommas === 1) {
                 // Premier paramètre : type de couche
                 console.log('[Autocomplete] Context: layer type');
@@ -267,10 +266,10 @@ export function registerNaVisu4DLanguage(monaco) {
                     ]
                 };
             }
-            
+
             if (commandName === 'layer' && numCommas === 2) {
                 const layerType = parts[1].trim().toLowerCase();
-                
+
                 if (layerType === 'bathymetry') {
                     console.log('[Autocomplete] Context: bathymetry sources');
                     return {
@@ -297,7 +296,7 @@ export function registerNaVisu4DLanguage(monaco) {
                     };
                 }
             }
-            
+
             if (commandName === 'clear' && numCommas === 1) {
                 // Suggérer les noms de couches communes
                 console.log('[Autocomplete] Context: clear layer name');
@@ -312,11 +311,11 @@ export function registerNaVisu4DLanguage(monaco) {
                     ]
                 };
             }
-            
+
             console.log('[Autocomplete] No specific context');
-            return { suggestions: [] };
+            return {suggestions: []};
         },
-        
+
         // Déclencher automatiquement seulement sur # et ,
         triggerCharacters: ['#', ',']
     });
@@ -339,21 +338,23 @@ export function registerNaVisu4DLanguage(monaco) {
     monaco.languages.registerHoverProvider('navisu4d', {
         provideHover: (model, position) => {
             const word = model.getWordAtPosition(position);
-            if (!word) return null;
+            if (!word)
+                return null;
 
             const hoverText = getHoverDocumentation(word.word);
-            if (!hoverText) return null;
+            if (!hoverText)
+                return null;
 
             return {
                 range: new monaco.Range(
-                    position.lineNumber,
-                    word.startColumn,
-                    position.lineNumber,
-                    word.endColumn
-                ),
+                        position.lineNumber,
+                        word.startColumn,
+                        position.lineNumber,
+                        word.endColumn
+                        ),
                 contents: [
-                    { value: `**${word.word}**` },
-                    { value: hoverText }
+                    {value: `**${word.word}**`},
+                    {value: hoverText}
                 ]
             };
         }
@@ -367,16 +368,16 @@ export function registerNaVisu4DLanguage(monaco) {
         base: 'vs-dark',
         inherit: true,
         rules: [
-            { token: 'keyword.command', foreground: 'C586C0', fontStyle: 'bold' },
-            { token: 'keyword', foreground: '569CD6' },
-            { token: 'string', foreground: 'CE9178' },
-            { token: 'number', foreground: 'B5CEA8' },
-            { token: 'number.float', foreground: 'B5CEA8' },
-            { token: 'constant.language.boolean', foreground: '569CD6' },
-            { token: 'variable.region', foreground: '4EC9B0' },
-            { token: 'variable.layer', foreground: '4FC1FF' },
-            { token: 'delimiter.comma', foreground: 'D4D4D4' },
-            { token: 'invalid', foreground: 'F44747', fontStyle: 'italic' }
+            {token: 'keyword.command', foreground: 'C586C0', fontStyle: 'bold'},
+            {token: 'keyword', foreground: '569CD6'},
+            {token: 'string', foreground: 'CE9178'},
+            {token: 'number', foreground: 'B5CEA8'},
+            {token: 'number.float', foreground: 'B5CEA8'},
+            {token: 'constant.language.boolean', foreground: '569CD6'},
+            {token: 'variable.region', foreground: '4EC9B0'},
+            {token: 'variable.layer', foreground: '4FC1FF'},
+            {token: 'delimiter.comma', foreground: 'D4D4D4'},
+            {token: 'invalid', foreground: 'F44747', fontStyle: 'italic'}
         ],
         colors: {
             'editor.background': '#1E1E1E',
@@ -391,16 +392,16 @@ export function registerNaVisu4DLanguage(monaco) {
         base: 'vs',
         inherit: true,
         rules: [
-            { token: 'keyword.command', foreground: 'AF00DB', fontStyle: 'bold' },
-            { token: 'keyword', foreground: '0000FF' },
-            { token: 'string', foreground: 'A31515' },
-            { token: 'number', foreground: '098658' },
-            { token: 'number.float', foreground: '098658' },
-            { token: 'constant.language.boolean', foreground: '0000FF' },
-            { token: 'variable.region', foreground: '267F99' },
-            { token: 'variable.layer', foreground: '001080' },
-            { token: 'delimiter.comma', foreground: '000000' },
-            { token: 'invalid', foreground: 'CD3131', fontStyle: 'italic' }
+            {token: 'keyword.command', foreground: 'AF00DB', fontStyle: 'bold'},
+            {token: 'keyword', foreground: '0000FF'},
+            {token: 'string', foreground: 'A31515'},
+            {token: 'number', foreground: '098658'},
+            {token: 'number.float', foreground: '098658'},
+            {token: 'constant.language.boolean', foreground: '0000FF'},
+            {token: 'variable.region', foreground: '267F99'},
+            {token: 'variable.layer', foreground: '001080'},
+            {token: 'delimiter.comma', foreground: '000000'},
+            {token: 'invalid', foreground: 'CD3131', fontStyle: 'italic'}
         ],
         colors: {
             'editor.background': '#FFFFFF',
@@ -425,48 +426,48 @@ function createCompletion(monaco, label, kind, insertText, range) {
 function getCommandSuggestions(monaco, range) {
     const commands = [
         // Commandes principales
-        { label: 'comment', doc: 'Commentaire / texte libre', snippet: 'comment,"${1:Texte}"' },
-        { label: 'bbox', doc: 'Zone d\'affichage', snippet: 'bbox,${1:48.0},${2:-5.0},${3:49.0},${4:2.0}' },
-        { label: 'move', doc: 'Position de la caméra', snippet: 'move,flyTo,camera,${1:-4.46},${2:48.5},${3:5000},${4:0},${5:-45},${6:0}' },
-        { label: 'daynight', doc: 'Cycle jour/nuit', snippet: 'daynight,${1|true,false|}' },
-        
+        {label: 'comment', doc: 'Commentaire / texte libre', snippet: 'comment,"${1:Texte}"'},
+        {label: 'bbox', doc: 'Zone d\'affichage', snippet: 'bbox,${1:48.0},${2:-5.0},${3:49.0},${4:2.0}'},
+        {label: 'move', doc: 'Position de la caméra', snippet: 'move,flyTo,camera,${1:-4.46},${2:48.5},${3:5000},${4:0},${5:-45},${6:0}'},
+        {label: 'daynight', doc: 'Cycle jour/nuit', snippet: 'daynight,${1|true,false|}'},
+
         // Cartographie - SNIPPETS SIMPLIFIÉS
-        { label: 'chart', doc: 'Couche cartographique', snippet: 'chart,' },
-        { label: 'terrain', doc: 'Terrain 3D', snippet: 'terrain,google3d' },
-        { label: 'layer', doc: 'Couche de données', snippet: 'layer,' },
-        
+        {label: 'chart', doc: 'Couche cartographique', snippet: 'chart,'},
+        {label: 'terrain', doc: 'Terrain 3D', snippet: 'terrain,google3d'},
+        {label: 'layer', doc: 'Couche de données', snippet: 'layer,'},
+
         // Multimédia
-        { label: 'image', doc: 'Image 2D', snippet: 'image,${1:filename.jpg},"${2:Titre}",${3:800},${4:600}' },
-        { label: 'image3d', doc: 'Image 3D', snippet: 'image3d,${1:filename.jpg}' },
-        { label: 'video', doc: 'Vidéo', snippet: 'video,${1:https://...},"${2:Titre}",${3:800},${4:600}' },
-        { label: 'video3d', doc: 'Vidéo 3D', snippet: 'video3d,${1:https://...},${2|true,false|}' },
-        { label: 'billboard', doc: 'Billboard 3D', snippet: 'billboard,${1:image.jpg},"${2:Titre}",${3:-4.5},${4:48.5}' },
-        { label: 'billboardcb', doc: 'Billboard CB', snippet: 'billboardcb,${1:image.jpg}' },
-        { label: 'text', doc: 'Texte à l\'écran', snippet: 'text,"${1:Contenu}","${2:Titre}"' },
-        { label: 'audio', doc: 'Audio', snippet: 'audio,${1:sound.wav}' },
-        { label: 'speech', doc: 'Synthèse vocale', snippet: 'speech,"${1:Texte à prononcer}"' },
-        { label: 'webcam', doc: 'Activer webcam', snippet: 'webcam' },
-        { label: 'fireworks', doc: 'Feux d\'artifice', snippet: 'fireworks,${1:-4.5},${2:48.5},${3:100}' },
-        
+        {label: 'image', doc: 'Image 2D', snippet: 'image,${1:filename.jpg},"${2:Titre}",${3:800},${4:600}'},
+        {label: 'image3d', doc: 'Image 3D', snippet: 'image3d,${1:filename.jpg}'},
+        {label: 'video', doc: 'Vidéo', snippet: 'video,${1:https://...},"${2:Titre}",${3:800},${4:600}'},
+        {label: 'video3d', doc: 'Vidéo 3D', snippet: 'video3d,${1:https://...},${2|true,false|}'},
+        {label: 'billboard', doc: 'Billboard 3D', snippet: 'billboard,${1:image.jpg},"${2:Titre}",${3:-4.5},${4:48.5}'},
+        {label: 'billboardcb', doc: 'Billboard CB', snippet: 'billboardcb,${1:image.jpg}'},
+        {label: 'text', doc: 'Texte à l\'écran', snippet: 'text,"${1:Contenu}","${2:Titre}"'},
+        {label: 'audio', doc: 'Audio', snippet: 'audio,${1:sound.wav}'},
+        {label: 'speech', doc: 'Synthèse vocale', snippet: 'speech,"${1:Texte à prononcer}"'},
+        {label: 'webcam', doc: 'Activer webcam', snippet: 'webcam'},
+        {label: 'fireworks', doc: 'Feux d\'artifice', snippet: 'fireworks,${1:-4.5},${2:48.5},${3:100}'},
+
         // Simulation
-        { label: 'simulation', doc: 'Simulation', snippet: 'simulation,${1|json,nmea|},${2:data.json}' },
-        { label: 'navigation', doc: 'Navigation', snippet: 'navigation,${1|pilotchart,avurnav,gpx|},' },
-        
+        {label: 'simulation', doc: 'Simulation', snippet: 'simulation,${1|json,nmea|},${2:data.json}'},
+        {label: 'navigation', doc: 'Navigation', snippet: 'navigation,${1|pilotchart,avurnav,gpx|},'},
+
         // Autres
-        { label: 'seabed', doc: 'Fond marin', snippet: 'seabed' },
-        { label: 'quiz', doc: 'Quiz', snippet: 'quiz,${1:questions.json}' },
-        { label: 'clear', doc: 'Supprimer une couche', snippet: 'clear,' },
-        { label: 'clearAll', doc: 'Tout supprimer', snippet: 'clearAll' }
+        {label: 'seabed', doc: 'Fond marin', snippet: 'seabed'},
+        {label: 'quiz', doc: 'Quiz', snippet: 'quiz,${1:questions.json}'},
+        {label: 'clear', doc: 'Supprimer une couche', snippet: 'clear,'},
+        {label: 'clearAll', doc: 'Tout supprimer', snippet: 'clearAll'}
     ];
 
     return commands.map(cmd => ({
-        label: cmd.label,
-        kind: monaco.languages.CompletionItemKind.Function,
-        documentation: cmd.doc,
-        insertText: cmd.snippet,
-        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        range
-    }));
+            label: cmd.label,
+            kind: monaco.languages.CompletionItemKind.Function,
+            documentation: cmd.doc,
+            insertText: cmd.snippet,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range
+        }));
 }
 
 function getHoverDocumentation(word) {
