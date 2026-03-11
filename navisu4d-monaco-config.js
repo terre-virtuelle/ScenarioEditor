@@ -434,7 +434,7 @@ function getCommandSuggestions(monaco, range) {
         // Cartographie - SNIPPETS SIMPLIFIÉS
         {label: 'chart', doc: 'Couche cartographique', snippet: 'chart,'},
         {label: 'terrain', doc: 'Terrain 3D', snippet: 'terrain,google3d'},
-        {label: 'layer', doc: 'Couche de données', snippet: 'layer,'},
+     //   {label: 'layer', doc: 'Couche de données', snippet: 'layer,'},
 
         // Multimédia
         {label: 'image', doc: 'Image 2D', snippet: 'image,${1:filename.jpg},"${2:Titre}",${3:800},${4:600}'},
@@ -479,7 +479,7 @@ function getHoverDocumentation(word) {
         'daynight': 'Active ou désactive le cycle jour/nuit.\nSyntaxe : `#daynight,true|false`',
         'chart': 'Ajoute une couche cartographique.\nSyntaxe : `#chart,vector|raster|mbtiles,name`',
         'terrain': 'Active le terrain 3D Google.\nSyntaxe : `#terrain,google3d`',
-        'layer': 'Ajoute une couche de données (bathymétrie, altimétrie, océanographie).\nSyntaxe : `#layer,type,params...`',
+      //  'layer': 'Ajoute une couche de données (bathymétrie, altimétrie, océanographie).\nSyntaxe : `#layer,type,params...`',
         'clearAll': 'Supprime toutes les couches affichées.\nSyntaxe : `#clearAll`',
 
         // Couches vectorielles
